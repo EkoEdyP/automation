@@ -2,11 +2,12 @@ terraform {
   required_providers {
     idcloudhost = {
       source  = "bapung/idcloudhost"
-      version = "~> 0.1.0"
+      version = "~> 0.2.0"
     }
   }
 }
 
 provider "idcloudhost" {
-  api_key = var.api_key
+  auth_token = var.auth_token
+  region = var.region
 }

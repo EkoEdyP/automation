@@ -1,4 +1,4 @@
-variable "api_key" {
+variable "auth_token" {
   type = string
 }
 

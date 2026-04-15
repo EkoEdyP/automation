@@ -3,3 +3,4 @@
 *.tfstate.backup
 crash.log
 *.tfvars
+*.lock.hcl
