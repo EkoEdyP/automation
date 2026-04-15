@@ -61,7 +61,7 @@ Berisi konfigurasi provider Terraform untuk IDCloudHost.
 
 Berisi deklarasi variabel yang digunakan dalam project.
 
-* `api_key` → API Key dari IDCloudHost
+* `auth_token` → API Key dari IDCloudHost
 * `billing_account_id` → ID billing akun
 * `region` → lokasi server (default: jkt01)
 
@@ -75,7 +75,7 @@ File utama yang berisi semua resource yang akan dibuat:
 * 2 Virtual Machine (App & Gateway)
 * Floating IP (Static IP)
 * Firewall (Allow All)
-* Block Storage (2 volume)
+* Block Storage (2 bucket)
 * Attachment storage ke masing-masing VM
 
 ---
@@ -101,7 +101,7 @@ Berisi nilai dari variabel yang digunakan.
 Contoh:
 
 ```
-api_key            = "YOUR_API_KEY"
+auth_token            = "YOUR_API_KEY"
 billing_account_id = "YOUR_BILLING_ID"
 ```
 
