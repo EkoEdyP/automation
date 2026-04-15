@@ -11,14 +11,13 @@ resource "idcloudhost_network" "main" {
 resource "idcloudhost_vm" "app" {
   billing_account_id = var.billing_account_id
   disks       = 20
-  initial_password = "TerraformPassword123!"
+  initial_password = var.password_vm
   memory      = 2048
   name        = "vm-app"
   os_name     = "ubuntu"
   os_version  = "22.04"
-  username    = "ubuntu"
+  username    = "ubuntu-user-app"
   vcpu        = 2
-
 }
 
 # ========================
@@ -27,14 +26,13 @@ resource "idcloudhost_vm" "app" {
 resource "idcloudhost_vm" "gateway" {
   billing_account_id = var.billing_account_id
   disks       = 20
-  initial_password = "TerraformPassword123!"
+  initial_password = var.password_vm
   memory      = 2048
   name        = "vm-gateway"
   os_name     = "ubuntu"
   os_version  = "22.04"
-  username    = "ubuntu"
+  username    = "ubuntu-user-gateway"
   vcpu        = 2
-
 }
 
 # ========================
