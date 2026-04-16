@@ -3,6 +3,7 @@
 # ========================
 resource "idcloudhost_network" "main" {
   name   = "${var.general_name}-vpc"
+  # uuid   = var.vpc_uuid
 }
 
 # ========================
@@ -18,6 +19,9 @@ resource "idcloudhost_vm" "app" {
   os_version  = "22.04"
   username    = "${var.general_name}-ubuntu-app"
   vcpu        = 2
+  public_key = file(var.public_key_path)
+
+  # source_uuid = idcloudhost_network.main.uuid
 }
 
 # ========================
@@ -33,6 +37,9 @@ resource "idcloudhost_vm" "gateway" {
   os_version  = "22.04"
   username    = "${var.general_name}-ubuntu-gateway"
   vcpu        = 2
+  public_key = file(var.public_key_path)
+
+  # source_uuid = idcloudhost_network.main.uuid
 }
 
 # ========================

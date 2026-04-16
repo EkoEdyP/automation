@@ -19,3 +19,12 @@ variable "general_name" {
   type = string
   default = "eep"
 }
+
+# variable "vpc_uuid" {
+#   type = string
+# }
+
+variable "public_key_path" {
+  type = string
+  default = "~/.ssh/id_ed25519.pub"
+}
