@@ -2,7 +2,7 @@
 # VPC (VIRTUAL PRIVATE CLOUD)
 # ========================
 resource "idcloudhost_network" "main" {
-  name   = "vpc-terraform"
+  name   = "${var.general_name}-vpc"
 }
 
 # ========================
@@ -13,10 +13,10 @@ resource "idcloudhost_vm" "app" {
   disks       = 20
   initial_password = var.password_vm
   memory      = 2048
-  name        = "vm-app"
+  name        = "${var.general_name}-vm-app"
   os_name     = "ubuntu"
   os_version  = "22.04"
-  username    = "ubuntu-user-app"
+  username    = "${var.general_name}-ubuntu-app"
   vcpu        = 2
 }
 
@@ -28,10 +28,10 @@ resource "idcloudhost_vm" "gateway" {
   disks       = 20
   initial_password = var.password_vm
   memory      = 2048
-  name        = "vm-gateway"
+  name        = "${var.general_name}-vm-gateway"
   os_name     = "ubuntu"
   os_version  = "22.04"
-  username    = "ubuntu-user-gateway"
+  username    = "${var.general_name}-ubuntu-gateway"
   vcpu        = 2
 }
 
@@ -39,13 +39,13 @@ resource "idcloudhost_vm" "gateway" {
 # FLOATING IP
 # ========================
 resource "idcloudhost_floating_ip" "app_ip" {
-  name               = "floating-ip-app"
+  name               = "${var.general_name}-floating-ip-app"
   billing_account_id = var.billing_account_id
   assigned_to = idcloudhost_vm.app.id
 }
 
 resource "idcloudhost_floating_ip" "gateway_ip" {
-  name               = "floating-ip-gateway"
+  name               = "${var.general_name}-floating-ip-gateway"
   billing_account_id = var.billing_account_id
   assigned_to = idcloudhost_vm.gateway.id
 }
@@ -55,7 +55,7 @@ resource "idcloudhost_floating_ip" "gateway_ip" {
 # ========================
 resource "idcloudhost_firewall" "allow_all" {
   billing_account_id = var.billing_account_id
-  display_name = "Allow All"
+  display_name = "${var.general_name}-firewall"
 
   # Rule: Allow all inbound TCP dari semua IP
   rules {
@@ -92,10 +92,10 @@ resource "idcloudhost_firewall" "allow_all" {
 # ========================
 resource "idcloudhost_objectstorage" "app_bucket" {
   billing_account_id = var.billing_account_id
-  name = "bucket-app"
+  name = "${var.general_name}-bucket-app"
 }
 
 resource "idcloudhost_objectstorage" "gateway_bucket" {
   billing_account_id = var.billing_account_id
-  name = "bucket-gateway"
+  name = "${var.general_name}-bucket-gateway"
 }

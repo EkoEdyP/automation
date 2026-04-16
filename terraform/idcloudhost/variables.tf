@@ -14,3 +14,8 @@ variable "password_vm" {
   type = string
   default = "TerraformPassword123!"
 }
+
+variable "general_name" {
+  type = string
+  default = "eep"
+}
