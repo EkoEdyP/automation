@@ -1,0 +1,44 @@
+# roles/common/tasks/main.yml
+---
+- name: Set system timezone
+  community.general.timezone:
+    name: "{{ system_timezone }}"
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  register: apt_update
+  retries: 5
+  delay: 10
+  until: apt_update is succeeded  
+
+- name: Install common packages
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - vim
+      - htop
+      - unzip
+      - gnupg
+      - ca-certificates
+      - apt-transport-https
+      - software-properties-common
+      - python3-pip
+      - ufw
+    state: present
+  register: apt_install
+  retries: 5
+  delay: 10
+  until: apt_install is succeeded
+
+- name: Include user tasks
+  include_tasks: users.yml
+
+- name: Include SSH hardening tasks
+  include_tasks: ssh.yml
+
+- name: Include firewall tasks
+  include_tasks: firewall.yml

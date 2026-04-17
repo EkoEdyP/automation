@@ -1,0 +1,39 @@
+# roles/common/tasks/users.yml
+---
+- name: Create deploy group
+  group:
+    name: "{{ new_user_name }}"
+    state: present
+
+- name: Create deploy user
+  user:
+    name: "{{ new_user_name }}"
+    group: "{{ new_user_name }}"
+    groups: "{{ new_user_groups | join(',') }}"
+    shell: /bin/bash
+    create_home: yes
+    state: present
+    password: "{{ new_user_password | password_hash('sha512') }}"
+
+- name: Create .ssh directory for deploy user
+  file:
+    path: "/home/{{ new_user_name }}/.ssh"
+    state: directory
+    owner: "{{ new_user_name }}"
+    group: "{{ new_user_name }}"
+    mode: "0700"
+
+- name: Add SSH public key for deploy user
+  authorized_key:
+    user: "{{ new_user_name }}"
+    key: "{{ lookup('file', ssh_public_key_file) }}"
+    state: present
+
+- name: Add sudoers entry for deploy user (passwordless)
+  copy:
+    dest: "/etc/sudoers.d/{{ new_user_name }}"
+    content: "{{ new_user_name }} ALL=(ALL) NOPASSWD:ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"

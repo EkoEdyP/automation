@@ -1,0 +1,16 @@
+# playbooks/02-docker.yml
+---
+- name: "Install Docker on All VMs"
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - "../group_vars/all.yml"
+
+  vars:
+    deploy_user: deployer
+    docker_compose_version: "2.24.0"
+
+  roles:
+    - docker

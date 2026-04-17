@@ -1,0 +1,21 @@
+# playbooks/01-users.yml
+---
+- name: "Create Users + SSH Key Setup"
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - "../group_vars/all.yml"
+
+  vars:
+    new_user_name: deployer
+    new_user_password: "MyS3cur3P@ss!"    # ganti atau pakai ansible-vault
+    new_user_groups:
+      - sudo
+      - docker
+    ssh_public_key_file: /Users/eep/.ssh/id_ed25519.pub
+    ssh_port: 22
+
+  roles:
+    - common

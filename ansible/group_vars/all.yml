@@ -1,0 +1,23 @@
+# group_vars/all.yml — Global vars, semua environment
+project_name: myapp
+deploy_user: deployer
+deploy_group: deployer
+
+# Timezone
+system_timezone: Asia/Jakarta
+
+# Docker
+docker_compose_version: "2.24.0"
+
+# App
+app_domain: myapp.local         # ganti domain kamu
+frontend_port: 3000
+backend_port: 5000
+
+# Monitoring
+prometheus_port: 9090
+grafana_port: 3001
+node_exporter_port: 9100
+
+# SSL
+ssl_email: admin@myapp.local    # ganti email kamu
