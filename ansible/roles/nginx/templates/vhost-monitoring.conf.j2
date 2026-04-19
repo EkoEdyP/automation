@@ -1,0 +1,40 @@
+# roles/nginx/templates/vhost-monitoring.conf.j2
+upstream grafana {
+    server grafana:3000;
+    keepalive 32;
+}
+
+upstream prometheus {
+    server prometheus:9090;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name grafana.{{ app_domain }};
+
+    location / {
+        proxy_pass http://grafana;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 80;
+    server_name prometheus.{{ app_domain }};
+
+    location / {
+        proxy_pass http://prometheus;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

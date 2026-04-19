@@ -1,0 +1,9 @@
+# roles/nginx/defaults/main.yml
+deploy_user: deployer
+nginx_dir: "/home/deployer/nginx"
+network_name: "eep_network"
+vm_app_ip: "103.217.144.152"   # ganti IP vm-app
+frontend_port: 3000
+backend_port: 5000
+prometheus_port: 9090
+grafana_port: 3001

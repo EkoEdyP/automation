@@ -1,0 +1,90 @@
+# roles/nginx/tasks/main.yml
+---
+- name: Create nginx directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0755"
+  loop:
+    - "{{ nginx_dir }}"
+    - "{{ nginx_dir }}/conf.d"
+    - "{{ nginx_dir }}/ssl"
+    - "{{ nginx_dir }}/logs"
+
+- name: Deploy nginx.conf
+  template:
+    src: nginx.conf.j2
+    dest: "{{ nginx_dir }}/nginx.conf"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Deploy app vhost config
+  template:
+    src: vhost-app.conf.j2
+    dest: "{{ nginx_dir }}/conf.d/app.conf"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Deploy monitoring vhost config
+  template:
+    src: vhost-monitoring.conf.j2
+    dest: "{{ nginx_dir }}/conf.d/monitoring.conf"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Deploy docker-compose nginx
+  template:
+    src: docker-compose.nginx.yml.j2
+    dest: "{{ nginx_dir }}/docker-compose.yml"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Kill any container using ports 80 443
+  shell: |
+    for port in 80 443; do
+      containers=$(docker ps -q --filter "publish=$port")
+      if [ -n "$containers" ]; then
+        docker rm -f $containers
+      fi
+    done
+  changed_when: false
+  ignore_errors: true
+
+- name: Stop existing nginx stack (jika ada)
+  community.docker.docker_compose_v2:
+    project_src: "{{ nginx_dir }}"
+    state: absent
+  ignore_errors: true
+
+- name: Start nginx container
+  community.docker.docker_compose_v2:
+    project_src: "{{ nginx_dir }}"
+    state: present
+    pull: always
+
+- name: Allow HTTP in UFW
+  ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+
+- name: Allow HTTPS in UFW
+  ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+
+- name: Verify nginx running
+  community.docker.docker_container_info:
+    name: nginx-gateway
+  register: nginx_info
+
+- name: Show nginx status
+  debug:
+    msg:
+      - "Nginx status: {{ nginx_info.container.State.Status }}"
+      - "Frontend  : http://{{ app_domain }}"
+      - "Grafana   : http://{{ app_domain }}:3001"
+      - "Prometheus: http://{{ app_domain }}:9090"

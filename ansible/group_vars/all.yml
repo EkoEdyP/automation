@@ -10,7 +10,7 @@ system_timezone: Asia/Jakarta
 docker_compose_version: "2.24.0"
 
 # App
-app_domain: myapp.local         # ganti domain kamu
+app_domain: ekoedyp.studentdumbways.my.id
 frontend_port: 3000
 
 # Monitoring
