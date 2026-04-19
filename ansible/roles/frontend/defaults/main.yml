@@ -1,0 +1,10 @@
+# roles/frontend/defaults/main.yml
+frontend_repo: "https://github.com/EkoEdyP/wayshub-frontend.git"
+frontend_repo_branch: "main"
+frontend_base_dir: "/home/deployer"
+frontend_app_dir: "/home/deployer/wayshub-frontend"
+frontend_compose_dir: "/home/deployer"
+frontend_port: 3000
+frontend_container_name: "wayshub-frontend_staging"
+network_name: "eep_network"
+deploy_user: deployer

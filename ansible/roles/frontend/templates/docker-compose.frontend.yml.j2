@@ -1,0 +1,18 @@
+# roles/frontend/templates/docker-compose.frontend.yml.j2
+networks:
+  {{ network_name }}:
+    external: true
+
+services:
+  frontend:
+    build:
+      context: ./wayshub-frontend
+      dockerfile: Dockerfile
+    container_name: "{{ frontend_container_name }}"
+    restart: always
+    networks:
+      - {{ network_name }}
+    ports:
+      - "{{ frontend_port }}:3000"
+    environment:
+      - NODE_ENV=staging

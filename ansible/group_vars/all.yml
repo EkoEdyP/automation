@@ -1,5 +1,5 @@
 # group_vars/all.yml — Global vars, semua environment
-project_name: myapp
+project_name: wayshub
 deploy_user: deployer
 deploy_group: deployer
 
@@ -12,7 +12,6 @@ docker_compose_version: "2.24.0"
 # App
 app_domain: myapp.local         # ganti domain kamu
 frontend_port: 3000
-backend_port: 5000
 
 # Monitoring
 prometheus_port: 9090

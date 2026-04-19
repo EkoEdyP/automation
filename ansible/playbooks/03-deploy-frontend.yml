@@ -1,0 +1,39 @@
+# playbooks/03-deploy-frontend.yml
+---
+- name: "Deploy Wayshub Frontend"
+  hosts: app_servers
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - "../group_vars/all.yml"
+
+  vars:
+    deploy_user: deployer
+    frontend_repo: "https://github.com/EkoEdyP/wayshub-frontend.git"
+    frontend_repo_branch: "main"
+    frontend_base_dir: "/home/deployer"
+    frontend_app_dir: "/home/deployer/wayshub-frontend"
+    frontend_compose_dir: "/home/deployer"
+    frontend_port: 3000
+    frontend_container_name: "wayshub-frontend_staging"
+    network_name: "eep_network"
+
+  pre_tasks:
+    - name: Ensure Docker network exists
+      community.docker.docker_network:
+        name: "{{ network_name }}"
+        state: present
+
+  roles:
+    - frontend
+
+  post_tasks:
+    - name: Final check - container running
+      shell: docker ps --filter "name=wayshub-frontend_staging" --format "table {{ '{{' }}.Names{{ '}}' }}\t{{ '{{' }}.Status{{ '}}' }}\t{{ '{{' }}.Ports{{ '}}' }}"
+      register: docker_ps
+      changed_when: false
+
+    - name: Print container info
+      debug:
+        msg: "{{ docker_ps.stdout_lines }}"

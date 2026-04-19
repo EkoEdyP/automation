@@ -1,0 +1,76 @@
+# roles/frontend/tasks/main.yml
+---
+- name: Install git
+  apt:
+    name: git
+    state: present
+    update_cache: yes
+
+- name: Add git safe directory
+  community.general.git_config:
+    name: safe.directory
+    scope: global
+    value: "{{ frontend_app_dir }}"
+
+- name: Clone / update wayshub-frontend repo
+  git:
+    repo: "{{ frontend_repo }}"
+    dest: "{{ frontend_app_dir }}"
+    version: "{{ frontend_repo_branch }}"
+    force: yes
+  register: git_result
+
+- name: Show git result
+  debug:
+    msg: "Repo changed: {{ git_result.changed }}"
+
+- name: Generate docker-compose.yml
+  template:
+    src: docker-compose.frontend.yml.j2
+    dest: "{{ frontend_compose_dir }}/docker-compose.yml"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Kill any process using port 3000
+  shell: |
+    containers=$(docker ps -q --filter "publish=3000")
+    if [ -n "$containers" ]; then
+      docker rm -f $containers
+    fi
+  changed_when: false
+  ignore_errors: true
+  
+- name: Force remove existing container (jika ada)
+  community.docker.docker_container:
+    name: "{{ frontend_container_name }}"
+    state: absent
+    force_kill: yes
+  ignore_errors: true
+
+- name: Stop existing compose (jika ada)
+  community.docker.docker_compose_v2:
+    project_src: "{{ frontend_compose_dir }}"
+    state: absent
+  ignore_errors: true
+
+- name: Build and start frontend container
+  community.docker.docker_compose_v2:
+    project_src: "{{ frontend_compose_dir }}"
+    state: present
+    build: always
+
+- name: Verify container is running
+  community.docker.docker_container_info:
+    name: "{{ frontend_container_name }}"
+  register: container_info
+
+- name: Show container status
+  debug:
+    msg: "Container status: {{ container_info.container.State.Status }}"
+
+- name: Allow frontend port in UFW
+  ufw:
+    rule: allow
+    port: "{{ frontend_port | string }}"
+    proto: tcp
