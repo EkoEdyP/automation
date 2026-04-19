@@ -1,0 +1,44 @@
+# playbooks/04-monitoring.yml
+---
+- name: "[ MONITORING ] Install Node Exporter on All VMs"
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - "../group_vars/all.yml"
+
+  vars:
+    node_exporter_version: "1.7.0"
+    node_exporter_port: 9100
+
+  tasks:
+    - include_role:
+        name: monitoring
+        tasks_from: node_exporter
+
+- name: "[ MONITORING ] Deploy Prometheus + Grafana on Gateway"
+  hosts: gateway_servers
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - "../group_vars/all.yml"
+
+  vars:
+    deploy_user: deployer
+    monitoring_dir: "/home/deployer/monitoring"
+    prometheus_port: 9090
+    grafana_port: 3001
+    node_exporter_port: 9100
+    grafana_admin_password: "admin123"
+    network_name: "eep_network"
+
+  pre_tasks:
+    - name: Ensure Docker network exists
+      community.docker.docker_network:
+        name: "{{ network_name }}"
+        state: present
+
+  roles:
+    - monitoring

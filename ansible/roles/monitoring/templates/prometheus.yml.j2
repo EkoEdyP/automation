@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:{{ prometheus_port }}']
+
+  - job_name: 'node-exporter-app'
+    static_configs:
+      - targets: ['{{ hostvars["vm-app"]["ansible_host"] }}:{{ node_exporter_port }}']
+        labels:
+          instance: 'vm-app'
+          role: 'application'
+
+  - job_name: 'node-exporter-gateway'
+    static_configs:
+      - targets: ['{{ hostvars["vm-gateway"]["ansible_host"] }}:{{ node_exporter_port }}']
+        labels:
+          instance: 'vm-gateway'
+          role: 'gateway'

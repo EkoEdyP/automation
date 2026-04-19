@@ -1,0 +1,95 @@
+# roles/monitoring/tasks/main.yml
+---
+- name: Create monitoring directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0755"
+  loop:
+    - "{{ monitoring_dir }}"
+    - "{{ monitoring_dir }}/prometheus"
+    - "{{ monitoring_dir }}/grafana"
+    - "{{ monitoring_dir }}/grafana/provisioning"
+    - "{{ monitoring_dir }}/grafana/provisioning/datasources"
+    - "{{ monitoring_dir }}/grafana/provisioning/dashboards"
+
+- name: Deploy Prometheus config
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ monitoring_dir }}/prometheus/prometheus.yml"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Deploy Grafana datasource provisioning
+  template:
+    src: grafana-datasource.yml.j2
+    dest: "{{ monitoring_dir }}/grafana/provisioning/datasources/prometheus.yml"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Deploy docker-compose monitoring
+  template:
+    src: docker-compose.monitoring.yml.j2
+    dest: "{{ monitoring_dir }}/docker-compose.yml"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Kill any container using monitoring ports
+  shell: |
+    for port in {{ prometheus_port }} {{ grafana_port }}; do
+      containers=$(docker ps -q --filter "publish=$port")
+      if [ -n "$containers" ]; then
+        docker rm -f $containers
+      fi
+    done
+  changed_when: false
+  ignore_errors: true
+
+- name: Stop existing monitoring stack (jika ada)
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_dir }}"
+    state: absent
+  ignore_errors: true
+
+- name: Start monitoring stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_dir }}"
+    state: present
+    pull: always
+
+- name: Allow Prometheus port in UFW
+  ufw:
+    rule: allow
+    port: "{{ prometheus_port | string }}"
+    proto: tcp
+
+- name: Allow Grafana port in UFW
+  ufw:
+    rule: allow
+    port: "{{ grafana_port | string }}"
+    proto: tcp
+
+- name: Wait for Grafana to be ready
+  uri:
+    url: "http://localhost:{{ grafana_port }}/api/health"
+    status_code: 200
+  retries: 20        # tambah retries
+  delay: 15          # tambah delay
+  ignore_errors: true
+
+- name: Wait for Prometheus to be ready
+  uri:
+    url: "http://localhost:{{ prometheus_port }}/-/healthy"
+    status_code: 200
+  retries: 20
+  delay: 15
+  ignore_errors: true
+
+- name: Show monitoring URLs
+  debug:
+    msg:
+      - "Prometheus : http://{{ ansible_host }}:{{ prometheus_port }}"
+      - "Grafana    : http://{{ ansible_host }}:{{ grafana_port }}"
+      - "Grafana Login → admin / {{ grafana_admin_password }}"
