@@ -1,0 +1,49 @@
+# roles/monitoring/tasks/cadvisor.yml
+---
+- name: Ensure Docker network exists on app server
+  community.docker.docker_network:
+    name: "{{ network_name }}"
+    state: present
+
+- name: Stop existing cAdvisor (jika ada)
+  community.docker.docker_container:
+    name: cadvisor
+    state: absent
+    force_kill: yes
+  ignore_errors: true
+
+- name: Deploy cAdvisor container on app server
+  community.docker.docker_container:
+    name: cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    state: started
+    restart_policy: unless-stopped
+    published_ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    networks:
+      - name: "{{ network_name }}"
+
+- name: Allow cAdvisor port in UFW
+  ufw:
+    rule: allow
+    port: "8080"
+    proto: tcp
+
+- name: Verify cAdvisor running
+  uri:
+    url: "http://localhost:8080/metrics"
+    status_code: 200
+  retries: 5
+  delay: 5
+  ignore_errors: true
+
+- name: Show cAdvisor status
+  debug:
+    msg: "cAdvisor is running on port 8080"

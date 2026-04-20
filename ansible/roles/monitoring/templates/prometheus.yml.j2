@@ -20,3 +20,17 @@ scrape_configs:
         labels:
           instance: 'vm-gateway'
           role: 'gateway'
+
+  - job_name: 'cadvisor-app'
+    static_configs:
+      - targets: ['{{ hostvars["vm-app"]["ansible_host"] }}:8080']
+        labels:
+          instance: 'vm-app'
+          role: 'application'
+
+  - job_name: 'cadvisor-gateway'
+    static_configs:
+      - targets: ['{{ hostvars["vm-gateway"]["ansible_host"] }}:8080']
+        labels:
+          instance: 'vm-gateway'
+          role: 'gateway'

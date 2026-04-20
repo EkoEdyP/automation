@@ -1,0 +1,66 @@
+# roles/ssl/templates/vhost-monitoring-ssl.conf.j2
+upstream grafana {
+    server grafana:3000;
+    keepalive 32;
+}
+
+upstream prometheus_upstream {
+    server prometheus:9090;
+    keepalive 32;
+}
+
+# Grafana HTTP → HTTPS
+server {
+    listen 80;
+    server_name grafana.{{ app_domain }};
+    return 301 https://$server_name$request_uri;
+}
+
+# Grafana HTTPS
+server {
+    listen 443 ssl;
+    server_name grafana.{{ app_domain }};
+
+    ssl_certificate     /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_session_cache   shared:SSL:10m;
+
+    location / {
+        proxy_pass http://grafana;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# Prometheus HTTP → HTTPS
+server {
+    listen 80;
+    server_name prometheus.{{ app_domain }};
+    return 301 https://$server_name$request_uri;
+}
+
+# Prometheus HTTPS
+server {
+    listen 443 ssl;
+    server_name prometheus.{{ app_domain }};
+
+    ssl_certificate     /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_session_cache   shared:SSL:10m;
+
+    location / {
+        proxy_pass http://prometheus_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

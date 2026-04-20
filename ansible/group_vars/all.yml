@@ -19,4 +19,4 @@ grafana_port: 3001
 node_exporter_port: 9100
 
 # SSL
-ssl_email: admin@myapp.local    # ganti email kamu
+ssl_email: purwanto.edy.eko@gmail.com

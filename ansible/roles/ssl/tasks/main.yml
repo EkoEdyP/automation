@@ -1,0 +1,105 @@
+# roles/ssl/tasks/main.yml
+---
+- name: Install certbot
+  apt:
+    name:
+      - certbot
+    state: present
+    update_cache: yes
+
+- name: Check if certificate already exists
+  stat:
+    path: "/etc/letsencrypt/live/{{ app_domain }}/fullchain.pem"
+  register: cert_exists
+
+- name: Stop nginx container (untuk certbot standalone)
+  community.docker.docker_compose_v2:
+    project_src: "{{ nginx_dir }}"
+    state: absent
+  when: not cert_exists.stat.exists
+  ignore_errors: true
+
+- name: "[Let's Encrypt] Obtain SSL certificate"
+  command: >
+    certbot certonly --standalone
+    --non-interactive
+    --agree-tos
+    --email {{ ssl_email }}
+    -d {{ app_domain }}
+  when:
+    - not cert_exists.stat.exists
+    - ssl_provider == "letsencrypt"
+
+- name: Copy certs to nginx ssl directory
+  copy:
+    src: "/etc/letsencrypt/live/{{ app_domain }}/{{ item.src }}"
+    dest: "{{ nginx_dir }}/ssl/{{ item.dest }}"
+    remote_src: yes
+    mode: "0644"
+  loop:
+    - { src: "fullchain.pem", dest: "fullchain.pem" }
+    - { src: "privkey.pem",   dest: "privkey.pem" }
+  when: ssl_provider == "letsencrypt"
+
+- name: "[Self-Signed] Generate self-signed certificate"
+  command: >
+    openssl req -x509 -nodes -days 365
+    -newkey rsa:2048
+    -keyout {{ nginx_dir }}/ssl/privkey.pem
+    -out {{ nginx_dir }}/ssl/fullchain.pem
+    -subj "/C=ID/ST=EastJava/L=Surabaya/O=wayshub/CN={{ app_domain }}"
+  when:
+    - not cert_exists.stat.exists
+    - ssl_provider == "selfsigned"
+
+- name: Set permissions on SSL files
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - "{{ nginx_dir }}/ssl/privkey.pem"
+    - "{{ nginx_dir }}/ssl/fullchain.pem"
+
+- name: Deploy updated nginx vhost with SSL
+  template:
+    src: vhost-app-ssl.conf.j2
+    dest: "{{ nginx_dir }}/conf.d/app.conf"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Deploy updated monitoring vhost with SSL
+  template:
+    src: vhost-monitoring-ssl.conf.j2
+    dest: "{{ nginx_dir }}/conf.d/monitoring.conf"
+    owner: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Start nginx container kembali
+  community.docker.docker_compose_v2:
+    project_src: "{{ nginx_dir }}"
+    state: present
+    pull: never
+
+- name: Verify SSL certificate
+  command: >
+    openssl x509 -in {{ nginx_dir }}/ssl/fullchain.pem
+    -noout -dates
+  register: cert_dates
+
+- name: Show certificate info
+  debug:
+    msg: "{{ cert_dates.stdout_lines }}"
+
+- name: Setup auto-renewal cron (Let's Encrypt only)
+  cron:
+    name: "certbot renewal"
+    minute: "0"
+    hour: "2"
+    day: "*/3"
+    job: >
+      certbot renew --quiet --standalone
+      --pre-hook "docker stop nginx-gateway"
+      --post-hook "docker start nginx-gateway"
+  when: ssl_provider == "letsencrypt"

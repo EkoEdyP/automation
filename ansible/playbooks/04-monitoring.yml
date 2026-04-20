@@ -1,5 +1,6 @@
 # playbooks/04-monitoring.yml
 ---
+# Play 1: Node Exporter di SEMUA VM
 - name: "[ MONITORING ] Install Node Exporter on All VMs"
   hosts: all
   become: true
@@ -11,12 +12,31 @@
   vars:
     node_exporter_version: "1.7.0"
     node_exporter_port: 9100
+    network_name: "eep_network"
 
   tasks:
     - include_role:
         name: monitoring
         tasks_from: node_exporter
 
+# Play 2: cAdvisor di SEMUA VM
+- name: "[ MONITORING ] Deploy cAdvisor on All VMs"
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - "../group_vars/all.yml"
+
+  vars:
+    network_name: "eep_network"
+
+  tasks:
+    - include_role:
+        name: monitoring
+        tasks_from: cadvisor
+
+# Play 3: Prometheus + Grafana di gateway VM
 - name: "[ MONITORING ] Deploy Prometheus + Grafana on Gateway"
   hosts: gateway_servers
   become: true

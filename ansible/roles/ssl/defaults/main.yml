@@ -1,0 +1,5 @@
+# roles/ssl/defaults/main.yml
+deploy_user: deployer
+nginx_dir: "/home/deployer/nginx"
+network_name: "eep_network"
+ssl_provider: "letsencrypt"   # letsencrypt atau selfsigned
