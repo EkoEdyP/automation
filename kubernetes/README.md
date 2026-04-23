@@ -41,36 +41,39 @@
 Sebelum instalasi, pastikan port berikut sudah dibuka di masing-masing provider.
 
 ### Biznet Gio (k3s-master) – Inbound Rules
-| Port      | Protokol | Dari             | Keterangan            |
-|-----------|----------|------------------|-----------------------|
-| 6443      | TCP      | 103.217.144.152  | API server dari k3s-app |
-| 6443      | TCP      | 116.193.191.28   | API server dari k3s-gateway |
-| 8472      | UDP      | 103.217.144.152  | Flannel VXLAN         |
-| 8472      | UDP      | 116.193.191.28   | Flannel VXLAN         |
-| 10250     | TCP      | 103.217.144.152  | Kubelet               |
-| 10250     | TCP      | 116.193.191.28   | Kubelet               |
-| 2379-2380 | TCP      | 103.217.144.152  | etcd (HA cluster)     |
-| 2379-2380 | TCP      | 116.193.191.28   | etcd (HA cluster)     |
-| 22        | TCP      | Your IP          | SSH                   |
+| Port      | Protokol | Dari               | Keterangan                    |
+|-----------|----------|--------------------|-------------------------------|
+| 6443      | TCP      | IP VM APP          | API server dari k3s-app       |
+| 6443      | TCP      | IP VM GATEWAY      | API server dari k3s-gateway   |
+| 8472      | UDP      | IP VM APP          | Flannel VXLAN                 |
+| 8472      | UDP      | IP VM GATEWAY      | Flannel VXLAN                 |
+| 10250     | TCP      | IP VM APP          | Kubelet                       |
+| 10250     | TCP      | IP VM GATEWAY      | Kubelet                       |
+| 2379-2380 | TCP      | IP VM APP          | etcd (HA cluster)             |
+| 2379-2380 | TCP      | IP VM GATEWAY      | etcd (HA cluster)             |
+| 22        | TCP      | Your IP / Anywhere | SSH                           |
+| 2380      | TCP      | IP VM GATEWAY      | etcd peer dari k3s-gateway    |
+| 2380      | TCP      | IP VM APP          | etcd peer dari k3s-app        |
+
 
 ### IDCloudHost (k3s-app) – Inbound Rules
-| Port  | Protokol | Dari            | Keterangan      |
-|-------|----------|-----------------|-----------------|
-| 8472  | UDP      | 103.197.189.7   | Flannel VXLAN   |
-| 8472  | UDP      | 116.193.191.28  | Flannel VXLAN   |
-| 10250 | TCP      | 103.197.189.7   | Kubelet         |
-| 22    | TCP      | Your IP         | SSH             |
+| Port  | Protokol | Dari               | Keterangan      |
+|-------|----------|--------------------|-----------------|
+| 8472  | UDP      | IP VM-Master       | Flannel VXLAN   |
+| 8472  | UDP      | IP VM GATEWAY      | Flannel VXLAN   |
+| 10250 | TCP      | IP VM-Master       | Kubelet         |
+| 22    | TCP      | Your IP / Anywhere | SSH             |
 
 ### IDCloudHost (k3s-gateway) – Inbound Rules
-| Port  | Protokol | Dari            | Keterangan          |
-|-------|----------|-----------------|---------------------|
-| 80    | TCP      | 0.0.0.0/0       | HTTP ingress        |
-| 443   | TCP      | 0.0.0.0/0       | HTTPS ingress       |
-| 8080  | TCP      | Your IP         | Traefik dashboard   |
-| 8472  | UDP      | 103.197.189.7   | Flannel VXLAN       |
-| 8472  | UDP      | 103.217.144.152 | Flannel VXLAN       |
-| 10250 | TCP      | 103.197.189.7   | Kubelet             |
-| 22    | TCP      | Your IP         | SSH                 |
+| Port  | Protokol | Dari               | Keterangan          |
+|-------|----------|--------------------|---------------------|
+| 80    | TCP      | 0.0.0.0/0          | HTTP ingress        |
+| 443   | TCP      | 0.0.0.0/0          | HTTPS ingress       |
+| 8080  | TCP      | Your IP / Anywhere | Traefik dashboard   |
+| 8472  | UDP      | IP VM-Master       | Flannel VXLAN       |
+| 8472  | UDP      | IP VM APP          | Flannel VXLAN       |
+| 10250 | TCP      | IP VM-Master       | Kubelet             |
+| 22    | TCP      | Your IP / Anywhere | SSH                 |
 
 ---
 
@@ -80,8 +83,8 @@ Sebelum instalasi, pastikan port berikut sudah dibuka di masing-masing provider.
 # SSH ke master
 ssh root@103.197.189.7
 
-# Upload & jalankan script
-curl -O https://raw.githubusercontent.com/.../install-master.sh
+# Download & jalankan script
+curl -o install-master.sh https://raw.githubusercontent.com/EkoEdyP/automation/main/kubernetes/install-master.sh
 # atau scp dari lokal:
 # scp scripts/install-master.sh root@103.197.189.7:~
 
@@ -100,7 +103,13 @@ K10xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx::server:xxxxxxxxxx
 
 ### Install k3s-app (103.217.144.152)
 ```bash
+# SSH ke app worker
 ssh root@103.217.144.152
+
+# Download & jalankan script
+curl -o install-worker.sh https://raw.githubusercontent.com/EkoEdyP/automation/main/kubernetes/install-worker.sh
+# atau scp dari lokal:
+# scp scripts/install-master.sh root@103.197.189.7:~
 
 # Set token dari master & role
 export K3S_TOKEN="K10xxx...::server:xxx"   # ← paste token dari master
