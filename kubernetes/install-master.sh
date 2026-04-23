@@ -11,8 +11,14 @@
 set -euo pipefail
 
 MASTER_PUBLIC_IP="103.197.189.7"
-MASTER_INTERNAL_IP=$(ip route get 1 | awk '{print $7; exit}')
 TOKEN_FILE="/tmp/node-token"
+
+# Deteksi internal IP dengan fallback yang lebih robust
+MASTER_INTERNAL_IP=$(ip route get 1 2>/dev/null | awk '{print $7; exit}')
+if [ -z "$MASTER_INTERNAL_IP" ] || [ "$MASTER_INTERNAL_IP" = "$MASTER_PUBLIC_IP" ]; then
+  # Fallback: ambil IP dari interface utama
+  MASTER_INTERNAL_IP=$(hostname -I | awk '{print $1}')
+fi
 
 echo "================================================"
 echo " [MASTER] Install k3s Control Plane"
@@ -32,7 +38,7 @@ echo "[2/7] Install etcd-client..."
 apt-get install -y -qq etcd-client
 echo "  ✅ etcd-client terinstall: $(etcdctl --version | head -1)"
 
-# Buat wrapper script agar etcdctl bisa dipakai tanpa env panjang
+# Buat wrapper agar etcdctl tidak perlu env panjang
 cat > /usr/local/bin/k3s-etcdctl << 'EOF'
 #!/usr/bin/env bash
 # Wrapper etcdctl untuk k3s — pakai cert k3s otomatis
@@ -45,7 +51,8 @@ sudo ETCDCTL_API=3 \
 EOF
 chmod +x /usr/local/bin/k3s-etcdctl
 echo "  ✅ Wrapper k3s-etcdctl dibuat"
-echo "     Contoh pakai: k3s-etcdctl member list"
+echo "     Contoh: k3s-etcdctl member list"
+echo "             k3s-etcdctl member remove <ID>"
 
 # ── 3. Install k3s server ─────────────────────────────────────
 echo "[3/7] Installing k3s server..."
@@ -103,20 +110,21 @@ echo ""
 echo "[7/7] Status cluster:"
 kubectl get nodes -o wide
 echo ""
+echo "  etcd member list:"
 k3s-etcdctl member list
 echo ""
 echo "================================================"
 echo " ✅ k3s-master siap!"
 echo ""
-echo "  Troubleshooting worker gagal join:"
+echo "  Troubleshooting jika worker gagal join:"
 echo "  k3s-etcdctl member list"
 echo "  k3s-etcdctl member remove <ID>"
 echo ""
 echo "  Langkah selanjutnya:"
 echo "  1. Salin token di atas ke worker"
-echo "  2. Buka firewall port:"
+echo "  2. Pastikan firewall terbuka:"
 echo "     TCP 6443       → API server"
-echo "     TCP 2379-2380  → etcd (antar server node)"
+echo "     TCP 2379-2380  → etcd peer"
 echo "     UDP 8472       → Flannel VXLAN"
 echo "     TCP 10250      → Kubelet"
 echo "  3. Jalankan install-worker.sh di k3s-app & k3s-gateway"

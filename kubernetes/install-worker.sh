@@ -7,7 +7,6 @@
 #  Mode: k3s SERVER (join HA cluster, ikut etcd)
 #
 #  Cara pakai:
-#    ssh user@<ip-worker>
 #    export K3S_TOKEN="<token dari master>"
 #    export NODE_ROLE="app"      # atau "gateway"
 #    sudo -E bash install-worker.sh
@@ -18,11 +17,12 @@ set -euo pipefail
 MASTER_PUBLIC_IP="103.197.189.7"
 K3S_URL="https://${MASTER_PUBLIC_IP}:6443"
 
-# Ambil dari environment variable
 K3S_TOKEN="${K3S_TOKEN:-}"
 NODE_ROLE="${NODE_ROLE:-}"
 
-NODE_IP=$(ip route get 1 | awk '{print $7; exit}')
+# Deteksi IP dengan fallback robust
+NODE_IP=$(ip route get 1 2>/dev/null | awk '{print $7; exit}')
+[ -z "$NODE_IP" ] && NODE_IP=$(hostname -I | awk '{print $1}')
 NODE_PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me \
   || curl -s --max-time 5 api.ipify.org \
   || echo "$NODE_IP")
@@ -64,14 +64,19 @@ echo "[1/5] Update sistem..."
 apt-get update -qq
 apt-get install -y -qq curl wget
 
-# ── 2. Cleanup instalasi k3s lama ────────────────────────────
+# ── 2. Cleanup instalasi k3s lama ─────────────────────────────
 echo "[2/5] Cleanup instalasi k3s lama..."
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Fix: gunakan path relatif terhadap lokasi script yang sebenarnya,
+# bukan BASH_SOURCE yang tidak reliable saat dipanggil dengan sudo -E bash
+SCRIPT_DIR="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
 
 if [ -f "$SCRIPT_DIR/uninstall-k3s.sh" ]; then
+  echo "  Menjalankan $SCRIPT_DIR/uninstall-k3s.sh..."
   bash "$SCRIPT_DIR/uninstall-k3s.sh"
 else
-  echo "  uninstall-k3s.sh tidak ditemukan, fallback inline..."
+  echo "  uninstall-k3s.sh tidak ditemukan di $SCRIPT_DIR"
+  echo "  Fallback inline cleanup..."
   systemctl stop k3s k3s-agent 2>/dev/null || true
   [ -f /usr/local/bin/k3s-killall.sh ]         && bash /usr/local/bin/k3s-killall.sh 2>/dev/null || true
   [ -f /usr/local/bin/k3s-uninstall.sh ]       && bash /usr/local/bin/k3s-uninstall.sh 2>/dev/null || true
