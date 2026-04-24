@@ -108,6 +108,9 @@ ssh root@103.217.144.152
 
 # Download & jalankan script
 curl -o install-worker.sh https://raw.githubusercontent.com/EkoEdyP/automation/main/kubernetes/install-worker.sh
+
+curl -o uninstall-k3s.sh https://raw.githubusercontent.com/EkoEdyP/automation/main/kubernetes/uninstall-k3s.sh
+
 # atau scp dari lokal:
 # scp scripts/install-master.sh root@103.197.189.7:~
 
@@ -116,6 +119,7 @@ export K3S_TOKEN="K10xxx...::server:xxx"   # ← paste token dari master
 export NODE_ROLE="app"
 
 chmod +x install-worker.sh
+chmod +x uninstall-k3s.sh
 sudo -E bash install-worker.sh
 ```
 
