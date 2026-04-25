@@ -17,7 +17,7 @@ spec:
         node-role: app
       containers:
       - name: backend
-        image: echoedyp/wayshub-backend:fixed
+        image: ramdhanifauzi/wayshub-backend:latest
         ports:
         - containerPort: 5000
 ---

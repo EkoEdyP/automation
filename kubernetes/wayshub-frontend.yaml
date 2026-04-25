@@ -17,7 +17,7 @@ spec:
         node-role: app
       containers:
       - name: frontend
-        image: echoedyp/wayshub-frontend:fixed
+        image: ramdhanifauzi/wayshub-frontend:latest
         ports:
         - containerPort: 3000
 ---
